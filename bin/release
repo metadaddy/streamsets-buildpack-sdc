@@ -4,4 +4,6 @@ cat << EOF
 ---
 addons:
   - heroku-postgresql
+default_process_types:
+  web: streamsets-datacollector-${SDC_VERSION}/bin/streamsets dc
 EOF

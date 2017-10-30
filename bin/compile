@@ -27,6 +27,10 @@ install_java ${BUILD_DIR} ${javaVersion}
 
 echo "-----> Downloading and extracting StreamSets Data Collector ${SDC_VERSION}"
 curl -s --retry 3 -L http://archives.streamsets.com/datacollector/${SDC_VERSION}/tarball/streamsets-datacollector-core-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
+echo "-----> Downloading and extracting StreamSets Data Collector AWS Stage Library ${SDC_VERSION}"
+curl -s --retry 3 -L http://archives.streamsets.com/datacollector/${SDC_VERSION}/tarball/streamsets-datacollector-aws-lib-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
+echo "-----> Downloading and extracting StreamSets Data Collector JDBC Stage Library ${SDC_VERSION}"
+curl -s --retry 3 -L http://archives.streamsets.com/datacollector/${SDC_VERSION}/tarball/streamsets-datacollector-jdbc-lib-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
 
 # Change the port number
 sed -i '/^http.port=/c\http.port=${env(PORT)}' ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/etc/sdc.properties

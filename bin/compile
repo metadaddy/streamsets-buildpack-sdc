@@ -1,0 +1,31 @@
+#!/bin/bash
+# bin/compile <build-dir> <cache-dir> <env-dir>
+
+# Fail fast
+set -e
+
+BP_DIR=$(cd $(dirname $0)/..; pwd) # absolute path
+BUILD_DIR=$1
+CACHE_DIR=$2
+ENV_DIR=$3
+
+source /dev/stdin <<< "$(curl -s --retry 3 -L $BUILDPACK_STDLIB_URL)"
+
+export_env $ENV_DIR "." "JAVA_OPTS|JAVA_TOOL_OPTIONS"
+
+echo "-----> Downloading and extracting JVM"
+# download the buildpack
+JVM_COMMON_BUILDPACK=${JVM_COMMON_BUILDPACK:-https://codon-buildpacks.s3.amazonaws.com/buildpacks/heroku/jvm-common.tgz}
+mkdir -p /tmp/jvm-common
+curl --silent --location $JVM_COMMON_BUILDPACK | tar xzm -C /tmp/jvm-common --strip-components=1
+. /tmp/jvm-common/bin/util
+. /tmp/jvm-common/bin/java
+
+# install JDK
+javaVersion=$(detect_java_version ${BUILD_DIR})
+install_java ${BUILD_DIR} ${javaVersion}
+
+echo "-----> Downloading and extracting StreamSets Data Collector ${SDC_VERSION}"
+curl http://archives.streamsets.com/datacollector/${SDC_VERSION}/tarball/streamsets-datacollector-core-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
+
+exit 0;

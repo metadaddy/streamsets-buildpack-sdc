@@ -72,6 +72,6 @@ echo "-----> Running SDC Java SDK Client"
 java -jar ${BUILD_DIR}/streamsets-java-sdk/${SDC_SDK_JAR} | indent
 
 echo "-----> Stopping SDC"
-curl -u admin:admin -H "X-Requested-By:sdc" -X POST http://localhost:${PORT}/rest/v1/system/shutdown
+curl -s -u admin:admin -H "X-Requested-By:sdc" -X POST http://localhost:${PORT}/rest/v1/system/shutdown
 
 exit 0;

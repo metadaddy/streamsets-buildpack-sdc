@@ -51,11 +51,11 @@ mkdir -p ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/streamsets-libs-ex
 # Change the SDC port number
 sed -i '/^http.port=/c\http.port=${env(PORT)}' ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/etc/sdc.properties
 
-# echo "-----> Downloading and extracting StreamSets Java SDK"
+echo "-----> Downloading StreamSets Java SDK"
 mkdir ${BUILD_DIR}/streamsets-java-sdk
-curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/tarball | tar xz -C ${BUILD_DIR}/streamsets-java-sdk --strip-components 1
-mvn org.apache.maven.plugins:maven-install-plugin:2.5.2:install-file -Dfile=${BUILD_DIR}/streamsets-java-sdk/lib/streamsets-datacollector-sdk-java-1.0-SNAPSHOT.jar | indent
-mvn org.apache.maven.plugins:maven-install-plugin:2.5.2:install-file -Dfile=${BUILD_DIR}/streamsets-java-sdk/lib/streamsets-datacollector-client-api-${SDC_VERSION}.jar | indent
+SDC_SDK_JAR=streamsets-datacollector-sdk-java-samples-1.0-SNAPSHOT.jar
+GIT_SHA=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/contents | jq -r ".[] | select(.name==\"${SDC_SDK_JAR}\") | .sha")
+curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/git/blobs/${GIT_SHA} -o ${SDC_SDK_JAR}
 
 # Spin up SDC
 echo "-----> Starting SDC"
@@ -66,7 +66,7 @@ while ! nc -q 1 localhost ${PORT} </dev/null; do sleep 2; done
 
 echo "-----> Running SDC Java SDK Client"
 cd ${BUILD_DIR}/streamsets-java-sdk
-mvn clean compile exec:java -Dsdc.version=${SDC_VERSION} -Dexec.mainClass="com.streamsets.datacollector.sdk.samples.AwsS3ToPostgresSample" | indent
+java -jar ${SDC_SDK_JAR} | indent
 
 echo "-----> Stopping SDC"
 curl -u admin:admin -H "X-Requested-By:sdc" -X POST http://localhost:${PORT}/rest/v1/system/shutdown

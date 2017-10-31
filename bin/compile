@@ -52,6 +52,14 @@ mkdir ${BUILD_DIR}/streamsets-java-sdk
 curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/tarball | tar xz -C ${BUILD_DIR}/streamsets-java-sdk --strip-components 1
 mvn org.apache.maven.plugins:maven-install-plugin:2.5.2:install-file -Dfile=${BUILD_DIR}/streamsets-java-sdk/lib/streamsets-datacollector-sdk-java-1.0-SNAPSHOT.jar
 mvn org.apache.maven.plugins:maven-install-plugin:2.5.2:install-file -Dfile=${BUILD_DIR}/streamsets-java-sdk/lib/streamsets-datacollector-client-api-${SDC_VERSION}.jar
+
+# Spin up SDC
+echo "-----> Starting SDC"
+export PORT=18630
+${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/bin/streamsets dc &
+while ! nc -q 1 localhost ${PORT} </dev/null; do sleep 2; done
+
+echo "-----> Running SDC Java SDK Client"
 mvn clean compile exec:java -Dexec.mainClass="com.streamsets.datacollector.sdk.samples.AwsS3ToPostgres"
 
 exit 0;

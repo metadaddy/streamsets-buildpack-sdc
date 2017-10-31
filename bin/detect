@@ -1,3 +1,9 @@
 #!/bin/bash
 
-exit 0;
+# Need params.properties in root
+if [ -f $1/params.properties ]; then
+  echo "StreamSets Data Collector"
+  exit 0
+else
+  exit 1
+fi

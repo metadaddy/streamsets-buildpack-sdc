@@ -61,6 +61,7 @@ SDC_PID=$!
 while ! nc -q 1 localhost ${PORT} </dev/null; do sleep 2; done
 
 echo "-----> Running SDC Java SDK Client"
+cd ${BUILD_DIR}/streamsets-java-sdk
 mvn clean compile exec:java -Dexec.mainClass="com.streamsets.datacollector.sdk.samples.AwsS3ToPostgres"
 kill $SDC_PID
 

@@ -25,13 +25,12 @@ curl --silent --location $JVM_COMMON_BUILDPACK | tar xzm -C /tmp/jvm-common --st
 javaVersion=$(detect_java_version ${BUILD_DIR})
 install_java ${BUILD_DIR} ${javaVersion}
 
+echo "-----> Downloading and extracting Maven"
 # install Maven to CACHE_DIR
 mkdir -p ${CACHE_DIR}
 curl --retry 3 --silent --max-time 60 --location https://lang-jvm.s3.amazonaws.com/maven-3.3.9.tar.gz | tar xzm -C ${CACHE_DIR}
 chmod +x ${CACHE_DIR}/.maven/bin/mvn
 PATH="${CACHE_DIR}/.maven/bin:$PATH"
-
-mvn --version
 
 # Install SDC, AWS, JDBC stage libs
 echo "-----> Downloading and extracting StreamSets Data Collector ${SDC_VERSION}"
@@ -49,6 +48,10 @@ mkdir -p ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/streamsets-libs-ex
 sed -i '/^http.port=/c\http.port=${env(PORT)}' ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/etc/sdc.properties
 
 # echo "-----> Downloading and extracting StreamSets Java SDK"
-# curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/contents/tbd.tgz | tar xz -C ${BUILD_DIR}
+mkdir ${BUILD_DIR}/streamsets-java-sdk
+curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/tarball | tar xz -C ${BUILD_DIR}/streamsets-java-sdk --strip-components 1
+mvn org.apache.maven.plugins:maven-install-plugin:2.5.2:install-file -Dfile=${BUILD_DIR}/streamsets-java-sdk/lib/streamsets-datacollector-sdk-java-1.0-SNAPSHOT.jar
+mvn org.apache.maven.plugins:maven-install-plugin:2.5.2:install-file -Dfile=${BUILD_DIR}/streamsets-java-sdk/lib/streamsets-datacollector-client-api-${SDC_VERSION}.jar
+mvn clean compile exec:java -Dexec.mainClass="com.streamsets.datacollector.sdk.samples.AwsS3ToPostgres"
 
 exit 0;

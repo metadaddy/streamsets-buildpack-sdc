@@ -26,7 +26,12 @@ javaVersion=$(detect_java_version ${BUILD_DIR})
 install_java ${BUILD_DIR} ${javaVersion}
 
 # install Maven to CACHE_DIR
-echo "       CACHE_DIR is ${CACHE_DIR}"
+mkdir -p ${CACHE_DIR}
+curl --retry 3 --silent --max-time 60 --location https://lang-jvm.s3.amazonaws.com/maven-3.3.9.tar.gz | tar xzm -C ${CACHE_DIR}
+chmod +x ${CACHE_DIR}/.maven/bin/mvn
+PATH="${CACHE_DIR}/.maven/bin:$PATH"
+
+mvn --version
 
 # Install SDC, AWS, JDBC stage libs
 echo "-----> Downloading and extracting StreamSets Data Collector ${SDC_VERSION}"

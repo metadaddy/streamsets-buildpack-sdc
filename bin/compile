@@ -43,6 +43,6 @@ sed -i '/^http.port=/c\http.port=${env(PORT)}' ${BUILD_DIR}/streamsets-datacolle
 # echo "-----> Downloading and extracting StreamSets Java SDK"
 # curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/contents/tbd.tgz | tar xz -C ${BUILD_DIR}
 
-
+mvn --version
 
 exit 0;

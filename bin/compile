@@ -36,6 +36,10 @@ curl --retry 3 --silent --max-time 60 --location https://lang-jvm.s3.amazonaws.c
 chmod +x ${CACHE_DIR}/.maven/bin/mvn
 PATH="${CACHE_DIR}/.maven/bin:$PATH"
 
+echo "-----> Downloading jq"
+curl -s --retry 3 -L https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 -o ${CACHE_DIR}/jq
+chmod +x ${CACHE_DIR}/jq
+
 # Install SDC, AWS, JDBC stage libs
 echo "-----> Downloading and extracting StreamSets Data Collector ${SDC_VERSION}"
 curl -s --retry 3 -L http://archives.streamsets.com/datacollector/${SDC_VERSION}/tarball/streamsets-datacollector-core-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
@@ -54,8 +58,8 @@ sed -i '/^http.port=/c\http.port=${env(PORT)}' ${BUILD_DIR}/streamsets-datacolle
 echo "-----> Downloading StreamSets Java SDK"
 mkdir ${BUILD_DIR}/streamsets-java-sdk
 SDC_SDK_JAR=streamsets-datacollector-sdk-java-samples-1.0-SNAPSHOT.jar
-GIT_SHA=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/contents | jq -r ".[] | select(.name==\"${SDC_SDK_JAR}\") | .sha")
-curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/git/blobs/${GIT_SHA} -o ${SDC_SDK_JAR}
+GIT_SHA=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/contents | ${CACHE_DIR}/jq -r ".[] | select(.name==\"${SDC_SDK_JAR}\") | .sha")
+curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/git/blobs/${GIT_SHA} -o ${BUILD_DIR}/streamsets-java-sdk/${SDC_SDK_JAR}
 
 # Spin up SDC
 echo "-----> Starting SDC"
@@ -65,8 +69,7 @@ SDC_PID=$!
 while ! nc -q 1 localhost ${PORT} </dev/null; do sleep 2; done
 
 echo "-----> Running SDC Java SDK Client"
-cd ${BUILD_DIR}/streamsets-java-sdk
-java -jar ${SDC_SDK_JAR} | indent
+java -jar ${BUILD_DIR}/streamsets-java-sdk/${SDC_SDK_JAR} | indent
 
 echo "-----> Stopping SDC"
 curl -u admin:admin -H "X-Requested-By:sdc" -X POST http://localhost:${PORT}/rest/v1/system/shutdown

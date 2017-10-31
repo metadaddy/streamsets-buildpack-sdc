@@ -29,13 +29,6 @@ curl --silent --location $JVM_COMMON_BUILDPACK | tar xzm -C /tmp/jvm-common --st
 javaVersion=$(detect_java_version ${BUILD_DIR})
 install_java ${BUILD_DIR} ${javaVersion}
 
-echo "-----> Downloading and extracting Maven"
-# install Maven to CACHE_DIR
-mkdir -p ${CACHE_DIR}
-curl --retry 3 --silent --max-time 60 --location https://lang-jvm.s3.amazonaws.com/maven-3.3.9.tar.gz | tar xzm -C ${CACHE_DIR}
-chmod +x ${CACHE_DIR}/.maven/bin/mvn
-PATH="${CACHE_DIR}/.maven/bin:$PATH"
-
 echo "-----> Downloading jq"
 curl -s --retry 3 -L https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 -o ${CACHE_DIR}/jq
 chmod +x ${CACHE_DIR}/jq

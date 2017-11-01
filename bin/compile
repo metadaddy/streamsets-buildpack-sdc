@@ -45,8 +45,9 @@ echo "-----> Downloading Postgres JDBC Driver"
 mkdir -p ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/streamsets-libs-extras/streamsets-datacollector-jdbc-lib/lib
 (cd ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/streamsets-libs-extras/streamsets-datacollector-jdbc-lib/lib; curl -s --retry 3 -L -O https://jdbc.postgresql.org/download/postgresql-42.1.4.jar)
 
-# Change the SDC port number
-sed -i '/^http.port=/c\http.port=${env(PORT)}' ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/etc/sdc.properties
+# Change the SDC port numbers
+sed -i '/^https.port=/c\https.port=${env(PORT)}' ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/etc/sdc.properties
+sed -i '/^http.port=/c\http.port=-1' ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/etc/sdc.properties
 
 echo "-----> Downloading StreamSets Java SDK"
 mkdir ${BUILD_DIR}/streamsets-java-sdk

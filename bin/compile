@@ -45,27 +45,26 @@ echo "-----> Downloading Postgres JDBC Driver"
 mkdir -p ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/streamsets-libs-extras/streamsets-datacollector-jdbc-lib/lib
 (cd ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/streamsets-libs-extras/streamsets-datacollector-jdbc-lib/lib; curl -s --retry 3 -L -O https://jdbc.postgresql.org/download/postgresql-42.1.4.jar)
 
-# Change the SDC port numbers
-sed -i '/^https.port=/c\https.port=${env(PORT)}' ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/etc/sdc.properties
-sed -i '/^http.port=/c\http.port=-1' ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/etc/sdc.properties
+# Change the SDC port number
+sed -i '/^http.port=/c\http.port=${env(PORT)}' ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/etc/sdc.properties
 
-# echo "-----> Downloading StreamSets Java SDK"
-# mkdir ${BUILD_DIR}/streamsets-java-sdk
-# SDC_SDK_JAR=streamsets-datacollector-sdk-java-samples-1.0-SNAPSHOT.jar
-# GIT_SHA=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/contents | ${CACHE_DIR}/jq -r ".[] | select(.name==\"${SDC_SDK_JAR}\") | .sha")
-# curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/git/blobs/${GIT_SHA} -o ${BUILD_DIR}/streamsets-java-sdk/${SDC_SDK_JAR}
+echo "-----> Downloading StreamSets Java SDK"
+mkdir ${BUILD_DIR}/streamsets-java-sdk
+SDC_SDK_JAR=streamsets-datacollector-sdk-java-samples-1.0-SNAPSHOT.jar
+GIT_SHA=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/contents | ${CACHE_DIR}/jq -r ".[] | select(.name==\"${SDC_SDK_JAR}\") | .sha")
+curl -s -H "Authorization: token ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github.v3.raw' -L https://api.github.com/repos/metadaddy/streamsets-java-sdk/git/blobs/${GIT_SHA} -o ${BUILD_DIR}/streamsets-java-sdk/${SDC_SDK_JAR}
 
-# # Spin up SDC
-# echo "-----> Starting SDC"
-# export PORT=18630
-# ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/bin/streamsets dc | indent &
-# SDC_PID=$!
-# while ! nc -q 1 localhost ${PORT} </dev/null; do sleep 2; done
+# Spin up SDC
+echo "-----> Starting SDC"
+export PORT=18630
+${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/bin/streamsets dc | indent &
+SDC_PID=$!
+while ! nc -q 1 localhost ${PORT} </dev/null; do sleep 2; done
 
-# echo "-----> Running SDC Java SDK Client"
-# java -jar ${BUILD_DIR}/streamsets-java-sdk/${SDC_SDK_JAR} | indent
+echo "-----> Running SDC Java SDK Client"
+java -jar ${BUILD_DIR}/streamsets-java-sdk/${SDC_SDK_JAR} | indent
 
-# echo "-----> Stopping SDC"
-# curl -s -u admin:admin -H "X-Requested-By:sdc" -X POST http://localhost:${PORT}/rest/v1/system/shutdown
+echo "-----> Stopping SDC"
+curl -s -u admin:admin -H "X-Requested-By:sdc" -X POST http://localhost:${PORT}/rest/v1/system/shutdown
 
 exit 0;

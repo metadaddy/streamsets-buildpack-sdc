@@ -30,13 +30,13 @@ javaVersion=$(detect_java_version ${BUILD_DIR})
 install_java ${BUILD_DIR} ${javaVersion}
 
 echo "-----> Downloading jq"
-VENDOR_BIN=${HOME}/vendor/bin
+VENDOR_BIN=${BUILD_DIR}/vendor/bin
 mkdir -p ${VENDOR_BIN}
 curl -s --retry 3 -L https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 -o ${VENDOR_BIN}/jq
 chmod +x ${VENDOR_BIN}/jq
 
 echo "-----> Writing profile script"
-PROFILE_SCRIPT=${HOME}/.profile.d/sdc.sh
+PROFILE_SCRIPT=${BUILD_DIR}/.profile.d/sdc.sh
 
 echo '#!/usr/bin/env bash' > ${PROFILE_SCRIPT}
 echo >> ${PROFILE_SCRIPT}

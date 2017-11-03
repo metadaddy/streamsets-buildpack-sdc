@@ -4,6 +4,7 @@
 # SDC_VERSION - e.g. 2.7.2.0
 # DPM_USER - e.g. admin@example.com
 # DPM_PASSWORD
+# DPM_LABEL
 #
 # The following environment variables are optional:
 # DPM_URL - defaults to https://cloud.streamsets.com/
@@ -23,6 +24,11 @@ fi
 
 if [ -z "${DPM_PASSWORD}" ]; then
     echo "DPM_PASSWORD must be set. Exiting..."
+    exit 1
+fi
+
+if [ -z "${DPM_LABEL}" ]; then
+    echo "DPM_LABEL must be set. Exiting..."
     exit 1
 fi
 
@@ -59,7 +65,14 @@ AUTH_TOKEN=$(curl -s -X PUT \
 
 echo "${AUTH_TOKEN}" > "${SDC_CONF}/application-token.txt"
 sed -i "s|dpm.enabled=.*|dpm.enabled=true|" ${SDC_CONF}/dpm.properties
-sed -i "s|dpm.base.url=.*|dpm.base.url=${URL}|" ${SDC_CONF}/dpm.properties
-sed -i "s|dpm.remote.control.job.labels=.*|dpm.remote.control.job.labels=${LABELS}|" ${SDC_CONF}/dpm.properties
+sed -i "s|dpm.base.url=.*|dpm.base.url=${DPM_URL}|" ${SDC_CONF}/dpm.properties
+sed -i "s|dpm.remote.control.job.labels=.*|dpm.remote.control.job.labels=${DPM_LABEL}|" ${SDC_CONF}/dpm.properties
+
+# Currently required to run on OpenJDK
+export SDC_ALLOW_UNSUPPORTED_JDK=true
+
+# Required for Heroku free dynos
+
+export SDC_FILE_LIMIT=9999
 
 exec "${SDC_DIST}/bin/streamsets" "$@"

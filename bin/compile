@@ -60,5 +60,6 @@ sed -i '/^http.port=/c\http.port=${env(PORT)}' ${BUILD_DIR}/streamsets-datacolle
 # Copy the startup script
 mkdir ${BUILD_DIR}/scripts
 cp ${BP_DIR}/scripts/* ${BUILD_DIR}/scripts
+chmod +x ${BUILD_DIR}/scripts/*
 
 exit 0;

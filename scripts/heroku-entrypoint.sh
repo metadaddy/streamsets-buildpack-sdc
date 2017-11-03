@@ -11,6 +11,21 @@
 
 set -e
 
+if [ -z "${SDC_VERSION}" ]; then
+    SDC_VERSION must be set. Exiting...
+    exit 1
+fi
+
+if [ -z "${DPM_USER}" ]; then
+    DPM_USER must be set. Exiting...
+    exit 1
+fi
+
+if [ -z "${DPM_PASSWORD}" ]; then
+    DPM_PASSWORD must be set. Exiting...
+    exit 1
+fi
+
 DPM_URL=${DPM_URL:-https://cloud.streamsets.com/}
 
 if [ "${DPM_URL: -1}" != "/" ]; then

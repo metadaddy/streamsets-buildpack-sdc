@@ -12,17 +12,17 @@
 set -e
 
 if [ -z "${SDC_VERSION}" ]; then
-    SDC_VERSION must be set. Exiting...
+    echo "SDC_VERSION must be set. Exiting..."
     exit 1
 fi
 
 if [ -z "${DPM_USER}" ]; then
-    DPM_USER must be set. Exiting...
+    echo "DPM_USER must be set. Exiting..."
     exit 1
 fi
 
 if [ -z "${DPM_PASSWORD}" ]; then
-    DPM_PASSWORD must be set. Exiting...
+    echo "DPM_PASSWORD must be set. Exiting..."
     exit 1
 fi
 

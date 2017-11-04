@@ -21,7 +21,7 @@ start_sdc() {
 
     # Required for Heroku free dynos
     FDS=$(ulimit -n)
-    if [ ${FDS} < "32768" ]; then
+    if [ $((${FDS} < 32768)) ]; then
         export SDC_FILE_LIMIT=$((${FDS}-1))
     fi
 

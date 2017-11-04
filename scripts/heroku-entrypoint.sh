@@ -12,6 +12,42 @@
 
 set -e
 
+start_sdc() {
+    local sdc_dist=$1
+    shift
+
+    # Currently required to run on OpenJDK
+    export SDC_ALLOW_UNSUPPORTED_JDK=true
+
+    # Required for Heroku free dynos
+    FDS=$(ulimit -n)
+    if [ ${FDS} < "32768" ]; then
+        export SDC_FILE_LIMIT=$((${FDS}-1))
+    fi
+
+    "${sdc_dist}/bin/streamsets" "$@" &
+}
+
+# Wait until our label shows up in the list of registered SDC labels
+wait_for_sdc_label() {
+    local dpm_url=$1
+    local session_token=$2
+    local dpm_label=$3
+    while [ -z "${label}" ]; do
+        local label=$(curl -s -X GET \
+            ${dpm_url}jobrunner/rest/v1/sdcs/labels \
+            -H "Content-Type:application/json" \
+            -H "X-Requested-By:SDC" \
+            -H "X-SS-REST-CALL:true" -H \
+            "X-SS-User-Auth-Token:${session_token}" | jq -r ".[] | select(. | contains(\"${dpm_label}\"))")
+    done
+}
+
+wait_for_sdc_exit() {
+    local port=$1
+    while ! nc -q 1 localhost ${port} </dev/null; do sleep 2; done    
+}
+
 if [ -z "${SDC_VERSION}" ]; then
     echo "SDC_VERSION must be set. Exiting..."
     exit 1
@@ -29,6 +65,11 @@ fi
 
 if [ -z "${DPM_LABEL}" ]; then
     echo "DPM_LABEL must be set. Exiting..."
+    exit 1
+fi
+
+if [ -z "${PIPELINE_COMMIT_ID}" ]; then
+    echo "PIPELINE_COMMIT_ID must be set. Exiting..."
     exit 1
 fi
 
@@ -68,11 +109,41 @@ sed -i "s|dpm.enabled=.*|dpm.enabled=true|" ${SDC_CONF}/dpm.properties
 sed -i "s|dpm.base.url=.*|dpm.base.url=${DPM_URL}|" ${SDC_CONF}/dpm.properties
 sed -i "s|dpm.remote.control.job.labels=.*|dpm.remote.control.job.labels=${DPM_LABEL}|" ${SDC_CONF}/dpm.properties
 
-# Currently required to run on OpenJDK
-export SDC_ALLOW_UNSUPPORTED_JDK=true
+start_sdc $SDC_DIST "$@"
 
-# Required for Heroku free dynos
+PIPELINE_COMMIT=$(curl -s -X GET \
+    ${DPM_URL}pipelinestore/rest/v1/pipelineCommit/${PIPELINE_COMMIT_ID} \
+    -H "Content-Type:application/json" -H "X-Requested-By:SDC" -H "X-SS-REST-CALL:true" \
+    -H "X-SS-User-Auth-Token:${SESSION_TOKEN}")
+PIPELINE_ID=$(echo ${PIPELINE_COMMIT} | jq -r .pipelineId)
+PIPELINE_NAME=$(echo ${PIPELINE_COMMIT} | jq -r .name)
+RULES_ID=$(echo ${PIPELINE_COMMIT} | jq -r .currentRules.id)
+PIPELINE_COMMIT_LABEL=v$(echo ${PIPELINE_COMMIT} | jq -r .version)
 
-export SDC_FILE_LIMIT=9999
+# Create a job
+JOB_ID=$(curl -s -X PUT \
+    -d "{\"name\": \"${DPM_LABEL}\", \
+         \"description\": \"Automatically created\", \
+         \"pipelineName\" : \"${PIPELINE_NAME}\", \
+         \"pipelineId\" : \"${PIPELINE_ID}\", \
+         \"pipelineCommitId\" : \"${PIPELINE_COMMIT_ID}\", \
+         \"rulesId\" : \"${RULES_ID}\", \
+         \"pipelineCommitLabel\" : \"${PIPELINE_COMMIT_LABEL}\", \
+         \"labels\" : [\"${DPM_LABEL}\"], \
+         \"statsRefreshInterval\": 60000, \
+         \"numInstances\" : 1, \
+         \"migrateOffsets\" : true, \
+         \"edge\" : false}" \
+    ${DPM_URL}jobrunner/rest/v1/jobs \
+    -H "Content-Type:application/json" -H "X-Requested-By:SDC" -H "X-SS-REST-CALL:true" \
+    -H "X-SS-User-Auth-Token:${SESSION_TOKEN}" | jq -r .id)
 
-exec "${SDC_DIST}/bin/streamsets" "$@"
+wait_for_sdc_label $DPM_URL $SESSION_TOKEN $DPM_LABEL
+
+# Start the job
+JOB_STARTED=$(curl -s -X POST \
+    ${DPM_URL}jobrunner/rest/v1/job/${JOB_ID}/start \
+    -H "Content-Type:application/json" -H "X-Requested-By:SDC" -H "X-SS-REST-CALL:true" \
+    -H "X-SS-User-Auth-Token:${SESSION_TOKEN}")
+
+wait_for_sdc_exit ${PORT}

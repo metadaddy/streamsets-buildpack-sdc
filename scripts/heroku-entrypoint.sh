@@ -45,7 +45,7 @@ wait_for_sdc_label() {
 
 wait_for_sdc_exit() {
     local port=$1
-    while ! nc -q 1 localhost ${port} </dev/null; do sleep 2; done    
+    while nc -q 1 localhost ${port} </dev/null; do sleep 2; done    
 }
 
 if [ -z "${SDC_VERSION}" ]; then

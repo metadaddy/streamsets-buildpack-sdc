@@ -24,11 +24,13 @@ start_sdc() {
         export SDC_FILE_LIMIT=$((${FDS}-1))
     fi
 
+    echo "Starting SDC"
     "${sdc_dist}/bin/streamsets" "$@" &
 }
 
 # Wait until our label shows up in the list of registered SDC labels
 wait_for_sdc_label() {
+    echo "Waiting for ${dpm_label} to show on DPM"
     local dpm_url=$1
     local session_token=$2
     local dpm_label=$3
@@ -42,7 +44,14 @@ wait_for_sdc_label() {
     done
 }
 
+wait_for_sdc_start() {
+    echo "Waiting for SDC to start"
+    local port=$1
+    while ! nc -q 1 localhost ${port} </dev/null; do sleep 2; done    
+}
+
 wait_for_sdc_exit() {
+    echo "Waiting for SDC to terminate"
     local port=$1
     while nc -q 1 localhost ${port} </dev/null; do sleep 2; done    
 }
@@ -78,6 +87,8 @@ SDC_CONF=${SDC_DIST}/etc
 
 # Generate unique DPM_LABEL
 DPM_LABEL=$(cat /proc/sys/kernel/random/uuid)
+
+echo "Using DPM label ${DPM_LABEL}"
 
 # Get session token
 SESSION_TOKEN=$(curl -s -X POST -d "{\"userName\":\"${DPM_USER}\", \"password\": \"${DPM_PASSWORD}\"}" \
@@ -135,12 +146,16 @@ JOB_ID=$(curl -s -X PUT \
     -H "Content-Type:application/json" -H "X-Requested-By:SDC" -H "X-SS-REST-CALL:true" \
     -H "X-SS-User-Auth-Token:${SESSION_TOKEN}" | jq -r .id)
 
-wait_for_sdc_label $DPM_URL $SESSION_TOKEN $DPM_LABEL
+wait_for_sdc_start ${PORT}
+
+wait_for_sdc_label ${DPM_URL} ${SESSION_TOKEN} ${DPM_LABEL}
 
 # Start the job
 JOB_STARTED=$(curl -s -X POST \
     ${DPM_URL}jobrunner/rest/v1/job/${JOB_ID}/start \
     -H "Content-Type:application/json" -H "X-Requested-By:SDC" -H "X-SS-REST-CALL:true" \
     -H "X-SS-User-Auth-Token:${SESSION_TOKEN}")
+
+echo ${JOB_STARTED}
 
 wait_for_sdc_exit ${PORT}

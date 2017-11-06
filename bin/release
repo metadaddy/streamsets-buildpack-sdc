@@ -5,5 +5,5 @@ cat << EOF
 addons:
   - heroku-postgresql
 default_process_types:
-  web: bash -x scripts/heroku-entrypoint.sh dc
+  web: scripts/heroku-entrypoint.sh dc
 EOF

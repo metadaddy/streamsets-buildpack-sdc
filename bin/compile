@@ -42,17 +42,26 @@ echo '#!/usr/bin/env bash' > ${PROFILE_SCRIPT}
 echo >> ${PROFILE_SCRIPT}
 echo 'PATH=${HOME}/vendor/bin:${PATH}' >> ${PROFILE_SCRIPT}
 
+# Check for snapshot version - need to get it from nightly archive
+if [[ ${SDC_VERSION} == *-SNAPSHOT ]]; then
+    SDC_ARCHIVE=http://nightly.streamsets.com.s3-us-west-2.amazonaws.com/datacollector/latest/tarball
+else
+	SDC_ARCHIVE=http://archives.streamsets.com/datacollector/${SDC_VERSION}/tarball
+fi
+
 # Install SDC, AWS, JDBC stage libs
 echo "-----> Downloading and extracting StreamSets Data Collector ${SDC_VERSION}"
-curl -s --retry 3 -L http://archives.streamsets.com/datacollector/${SDC_VERSION}/tarball/streamsets-datacollector-core-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
+curl -s --retry 3 -L ${SDC_ARCHIVE}/streamsets-datacollector-core-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
 echo "-----> Downloading and extracting StreamSets Data Collector AWS Stage Library ${SDC_VERSION}"
-curl -s --retry 3 -L http://archives.streamsets.com/datacollector/${SDC_VERSION}/tarball/streamsets-datacollector-aws-lib-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
+curl -s --retry 3 -L ${SDC_ARCHIVE}/streamsets-datacollector-aws-lib-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
 echo "-----> Downloading and extracting StreamSets Data Collector JDBC Stage Library ${SDC_VERSION}"
-curl -s --retry 3 -L http://archives.streamsets.com/datacollector/${SDC_VERSION}/tarball/streamsets-datacollector-jdbc-lib-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
+curl -s --retry 3 -L ${SDC_ARCHIVE}/streamsets-datacollector-jdbc-lib-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
 
 echo "-----> Downloading Postgres JDBC Driver"
 mkdir -p ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/streamsets-libs-extras/streamsets-datacollector-jdbc-lib/lib
-(cd ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/streamsets-libs-extras/streamsets-datacollector-jdbc-lib/lib; curl -s --retry 3 -L -O https://jdbc.postgresql.org/download/postgresql-42.1.4.jar)
+curl -s --retry 3 -L \
+    -o ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/streamsets-libs-extras/streamsets-datacollector-jdbc-lib/lib/postgresql-42.1.4.jar \
+	https://jdbc.postgresql.org/download/postgresql-42.1.4.jar
 
 # Change the SDC port number
 sed -i '/^http.port=/c\http.port=${env(PORT)}' ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/etc/sdc.properties

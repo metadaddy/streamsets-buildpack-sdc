@@ -4,7 +4,6 @@
 # SDC_VERSION - e.g. 2.7.2.0
 # DPM_USER - e.g. admin@example.com
 # DPM_PASSWORD
-# DPM_LABEL
 #
 # The following environment variables are optional:
 # DPM_URL - defaults to https://cloud.streamsets.com/
@@ -63,11 +62,6 @@ if [ -z "${DPM_PASSWORD}" ]; then
     exit 1
 fi
 
-if [ -z "${DPM_LABEL}" ]; then
-    echo "DPM_LABEL must be set. Exiting..."
-    exit 1
-fi
-
 if [ -z "${PIPELINE_COMMIT_ID}" ]; then
     echo "PIPELINE_COMMIT_ID must be set. Exiting..."
     exit 1
@@ -81,6 +75,9 @@ fi
 
 SDC_DIST=${HOME}/streamsets-datacollector-${SDC_VERSION}
 SDC_CONF=${SDC_DIST}/etc
+
+# Generate unique DPM_LABEL
+DPM_LABEL=$(cat /proc/sys/kernel/random/uuid)
 
 # Get session token
 SESSION_TOKEN=$(curl -s -X POST -d "{\"userName\":\"${DPM_USER}\", \"password\": \"${DPM_PASSWORD}\"}" \

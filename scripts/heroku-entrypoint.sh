@@ -4,6 +4,7 @@
 # SDC_VERSION - e.g. 2.7.2.0
 # DPM_USER - e.g. admin@example.com
 # DPM_PASSWORD
+# PIPELINE_COMMIT_ID
 #
 # The following environment variables are optional:
 # DPM_URL - defaults to https://cloud.streamsets.com/
@@ -30,10 +31,11 @@ start_sdc() {
 
 # Wait until our label shows up in the list of registered SDC labels
 wait_for_sdc_label() {
-    echo "Waiting for ${dpm_label} to show on DPM"
     local dpm_url=$1
     local session_token=$2
     local dpm_label=$3
+
+    echo "Waiting for ${dpm_label} to show on DPM"
     while [ -z "${label}" ]; do
         local label=$(curl -s -X GET \
             ${dpm_url}jobrunner/rest/v1/sdcs/labels \

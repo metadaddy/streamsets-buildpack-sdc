@@ -152,14 +152,14 @@ wait_for_sdc_start ${PORT}
 
 wait_for_sdc_label ${DPM_URL} ${SESSION_TOKEN} ${DPM_LABEL}
 
-# Start the job
-JOB_STARTED=$(curl -s -X POST \
-    ${DPM_URL}jobrunner/rest/v1/job/${JOB_ID}/start \
-    -H "Content-Type:application/json" -H "X-Requested-By:SDC" -H "X-SS-REST-CALL:true" \
-    -H "X-SS-User-Auth-Token:${SESSION_TOKEN}")
-JOB_ID=$(echo ${JOB_STARTED} | jq -r .jobId)
-JOB_STATUS=$(echo ${JOB_STARTED} | jq -r .status)
+# # Start the job
+# JOB_STARTED=$(curl -s -X POST \
+#     ${DPM_URL}jobrunner/rest/v1/job/${JOB_ID}/start \
+#     -H "Content-Type:application/json" -H "X-Requested-By:SDC" -H "X-SS-REST-CALL:true" \
+#     -H "X-SS-User-Auth-Token:${SESSION_TOKEN}")
+# JOB_ID=$(echo ${JOB_STARTED} | jq -r .jobId)
+# JOB_STATUS=$(echo ${JOB_STARTED} | jq -r .status)
 
-echo "Job ${JOB_ID} status is ${JOB_STATUS}"
+# echo "Job ${JOB_ID} status is ${JOB_STATUS}"
 
 wait_for_sdc_exit ${PORT}

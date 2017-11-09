@@ -45,6 +45,9 @@ echo 'PATH=${HOME}/vendor/bin:${PATH}' >> ${PROFILE_SCRIPT}
 # Check for snapshot version - need to get it from nightly archive
 if [[ ${SDC_VERSION} == *-SNAPSHOT ]]; then
     SDC_ARCHIVE=http://nightly.streamsets.com.s3-us-west-2.amazonaws.com/datacollector/latest/tarball
+elif [[ ${SDC_VERSION} == *-RC* ]]; then
+    SDC_ARCHIVE=http://nightly.streamsets.com.s3-us-west-2.amazonaws.com/datacollector/${SDC_VERSION:0:3}/${SDC_VERSION}/tarball
+    SDC_VERSION=${SDC_VERSION:0:7}
 else
 	SDC_ARCHIVE=http://archives.streamsets.com/datacollector/${SDC_VERSION}/tarball
 fi

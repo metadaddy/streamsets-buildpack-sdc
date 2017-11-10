@@ -148,7 +148,7 @@ JOB_ID=$(curl -s -X PUT \
          \"statsRefreshInterval\": 60000, \
          \"numInstances\" : 1, \
          \"migrateOffsets\" : true, \
-         \"runtimeParameters\": \"[\\\"AWS_KEY\\\":\\\"${AWS_KEY}\\\",\\\"AWS_SECRET\\\":\\\"${AWS_SECRET}\\\",\\\"AWS_BUCKET\\\":\\\"${AWS_BUCKET}\\\"]\", \
+         \"runtimeParameters\": \"[ { \\\"AWS_KEY\\\" : \\\"${AWS_KEY}\\\" }, { \\\"AWS_SECRET\\\" : \\\"${AWS_SECRET}\\\" }, { \\\"AWS_BUCKET\\\" : \\\"${AWS_BUCKET}\\\" } ]\", \
          \"edge\" : false}" \
     ${DPM_URL}jobrunner/rest/v1/jobs \
     -H "Content-Type:application/json" -H "X-Requested-By:SDC" -H "X-SS-REST-CALL:true" \

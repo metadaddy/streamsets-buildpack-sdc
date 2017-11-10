@@ -84,6 +84,11 @@ if [ "${DPM_URL: -1}" != "/" ]; then
     DPM_URL=${DPM_URL}/
 fi
 
+# Need to munge RC version
+if [[ ${SDC_VERSION} == *-RC* ]]; then
+    SDC_VERSION=${SDC_VERSION:0:7}
+fi
+
 SDC_DIST=${HOME}/streamsets-datacollector-${SDC_VERSION}
 SDC_CONF=${SDC_DIST}/etc
 

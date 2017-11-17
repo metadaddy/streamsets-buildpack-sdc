@@ -145,7 +145,7 @@ JOB_ID=$(curl -s -X PUT \
          \"rulesId\" : \"${RULES_ID}\", \
          \"pipelineCommitLabel\" : \"${PIPELINE_COMMIT_LABEL}\", \
          \"labels\" : [\"${DPM_LABEL}\"], \
-         \"statsRefreshInterval\": 60000, \
+         \"statsRefreshInterval\": 10000, \
          \"numInstances\" : 1, \
          \"migrateOffsets\" : true, \
          \"runtimeParameters\": \"{ \\\"AWS_KEY\\\" : \\\"${AWS_KEY}\\\", \\\"AWS_SECRET\\\" : \\\"${AWS_SECRET}\\\", \\\"AWS_BUCKET\\\" : \\\"${AWS_BUCKET}\\\" }\", \

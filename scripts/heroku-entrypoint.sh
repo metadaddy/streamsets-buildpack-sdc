@@ -123,6 +123,16 @@ if [ -z "${DPM_PASSWORD}" ]; then
     exit 1
 fi
 
+if [ -z "${SFDC_USERNAME}" ]; then
+    echo "SFDC_USERNAME must be set. Exiting..."
+    exit 1
+fi
+
+if [ -z "${SFDC_PASSWORD}" ]; then
+    echo "SFDC_PASSWORD must be set. Exiting..."
+    exit 1
+fi
+
 if [ -z "${PIPELINE_COMMIT_ID}" ]; then
     echo "PIPELINE_COMMIT_ID must be set. Exiting..."
     exit 1
@@ -140,7 +150,7 @@ set -e
 
 JDBC_USERNAME=$uri_user
 JDBC_PASSWORD=$uri_password
-JDBC_URL="jdbc:postgresql://${uri_host}:${uri_port}${uri_path}?sslmode=require"
+JDBC_URL="jdbc:postgresql://${uri_host}:${uri_port}${uri_path}"
 JDBC_TABLENAME=staging
 JDBC_SCHEMA=public
 
@@ -162,6 +172,77 @@ SDC_CONF=${SDC_DIST}/etc
 DPM_LABEL=$(cat /proc/sys/kernel/random/uuid)
 
 echo "Using DPM label ${DPM_LABEL}"
+
+# Login to Salesforce
+ESC_PASSWORD="$(echo ${SFDC_PASSWORD} | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g; s/'"'"'/\&#39;/g')"
+login="$(curl -s https://login.salesforce.com/services/Soap/u/39.0 \
+  -H "Content-Type: text/xml; charset=UTF-8" \
+  -H "SOAPAction: login" \
+  -d '<?xml version="1.0" encoding="utf-8" ?>
+<env:Envelope xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:env="http://schemas.xmlsoap.org/soap/envelope/">
+  <env:Body>
+    <n1:login xmlns:n1="urn:partner.soap.sforce.com">
+      <n1:username>'${SFDC_USERNAME}'</n1:username>
+      <n1:password>'${ESC_PASSWORD}'</n1:password>
+    </n1:login>
+  </env:Body>
+</env:Envelope>')"
+if [[ ! $(echo ${login} | xpath '/soapenv:Envelope/soapenv:Body/loginResponse' 2> /dev/null) ]]; then
+  # Couldn't login!
+  echo ${login} | xpath '/soapenv:Envelope/soapenv:Body/soapenv:Fault/faultstring/text()' 2> /dev/null
+  echo
+  exit 1
+fi
+SESSION_ID=$(echo ${login} | xpath '/soapenv:Envelope/soapenv:Body/loginResponse/result/sessionId/text()' 2> /dev/null)
+SALESFORCE_URL=$(echo ${login} | xpath '/soapenv:Envelope/soapenv:Body/loginResponse/result/serverUrl/text()' 2> /dev/null)
+
+set +e
+uri_parser "${SALESFORCE_URL}"
+set -e
+
+SALESFORCE_HOST=$uri_host
+
+# Is there already an Analytics connector?
+CONNECTORS=$(curl -s -H "Authorization: OAuth $SESSION_ID" https://${SALESFORCE_HOST}/services/data/v41.0/wave/dataConnectors/)
+CONNECTOR=$(echo $CONNECTORS | jq  ".dataConnectors | map(select(any(.connectionProperties[]; .value == \"$JDBC_URL\")))")
+if [ "${CONNECTOR}" == "[]" ]; then
+    # No connector - create it!
+    CREATED=$(curl -s -X POST \
+        -d "{ \
+          \"label\": \"StreamSets\", \
+          \"name\": \"StreamSets\", \
+          \"description\": \"StreamSets Connector\", \
+          \"connectorType\": \"HerokuPostgres\", \
+          \"connectionProperties\": [ \
+            { \
+              \"name\": \"JDBC_Connection_URL\", \
+              \"value\": \"${JDBC_URL}\" \
+            }, \
+            { \
+              \"name\": \"Password\", \
+              \"value\": \"${JDBC_PASSWORD}\" \
+            }, \
+            { \
+              \"name\": \"Schema\", \
+              \"value\": \"public\" \
+            }, \
+            { \
+              \"name\": \"Username\", \
+              \"value\": \"${JDBC_USERNAME}\" \
+            } \
+          ] \
+        }" \
+        -H "Authorization: OAuth $SESSION_ID" \
+        -H "Content-Type: application/json" \
+        https://${SALESFORCE_HOST}/services/data/v41.0/wave/dataConnectors/)
+    if echo $CREATED | jq .connectionProperties > /dev/null 2>&1; then
+        echo "Connector was created"
+    else
+        echo "Connector was not created - API returned: ${CREATED}" 
+    fi
+fi
 
 # Get session token
 SESSION_TOKEN=$(curl -s -X POST -d "{\"userName\":\"${DPM_USER}\", \"password\": \"${DPM_PASSWORD}\"}" \
@@ -221,7 +302,7 @@ JOB_ID=$(curl -s -X PUT \
            \\\"AWS_BUCKET\\\" : \\\"${AWS_BUCKET}\\\", \
            \\\"JDBC_USERNAME\\\" : \\\"${JDBC_USERNAME}\\\", \
            \\\"JDBC_PASSWORD\\\" : \\\"${JDBC_PASSWORD}\\\", \
-           \\\"JDBC_URL\\\" : \\\"${JDBC_URL}\\\", \
+           \\\"JDBC_URL\\\" : \\\"${JDBC_URL}?sslmode=require\\\", \
            \\\"JDBC_SCHEMA\\\" : \\\"${JDBC_SCHEMA}\\\", \
            \\\"JDBC_TABLENAME\\\" : \\\"${JDBC_TABLENAME}\\\" \
          }\", \

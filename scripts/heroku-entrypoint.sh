@@ -58,7 +58,7 @@ wait_for_sdc_exit() {
     while nc -q 1 localhost ${port} </dev/null; do sleep 2; done    
 }
 
-// Adapted from http://wp.vpalos.com/537/uri-parsing-using-bash-built-in-features/
+# Adapted from http://wp.vpalos.com/537/uri-parsing-using-bash-built-in-features/
 uri_parser() {
     # uri capture
     uri="$@"

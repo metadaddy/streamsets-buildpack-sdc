@@ -189,14 +189,14 @@ login="$(curl -s https://login.salesforce.com/services/Soap/u/39.0 \
     </n1:login>
   </env:Body>
 </env:Envelope>')"
-if [[ ! $(echo ${login} | xpath '/soapenv:Envelope/soapenv:Body/loginResponse' 2> /dev/null) ]]; then
+if ! echo ${login} | xpath -q -e '/soapenv:Envelope/soapenv:Body/loginResponse' > /dev/null; then
   # Couldn't login!
-  echo ${login} | xpath '/soapenv:Envelope/soapenv:Body/soapenv:Fault/faultstring/text()' 2> /dev/null
+  echo ${login} | xpath -q -e '/soapenv:Envelope/soapenv:Body/soapenv:Fault/faultstring/text()'
   echo
   exit 1
 fi
-SESSION_ID=$(echo ${login} | xpath '/soapenv:Envelope/soapenv:Body/loginResponse/result/sessionId/text()' 2> /dev/null)
-SALESFORCE_URL=$(echo ${login} | xpath '/soapenv:Envelope/soapenv:Body/loginResponse/result/serverUrl/text()' 2> /dev/null)
+SESSION_ID=$(echo ${login} | xpath -q -e '/soapenv:Envelope/soapenv:Body/loginResponse/result/sessionId/text()')
+SALESFORCE_URL=$(echo ${login} | xpath -q -e '/soapenv:Envelope/soapenv:Body/loginResponse/result/serverUrl/text()')
 
 set +e
 uri_parser "${SALESFORCE_URL}"

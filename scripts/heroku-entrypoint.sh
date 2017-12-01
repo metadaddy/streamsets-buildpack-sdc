@@ -218,12 +218,12 @@ JOB_ID=$(curl -s -X PUT \
            \"{ \
            \\\"AWS_KEY\\\" : \\\"${AWS_KEY}\\\", \
            \\\"AWS_SECRET\\\" : \\\"${AWS_SECRET}\\\", \
-           \\\"AWS_BUCKET\\\" : \\\"${AWS_BUCKET}\\\" \
-           \\\"JDBC_USERNAME\\\" : \\\"${JDBC_USERNAME}\\\" \
-           \\\"JDBC_PASSWORD\\\" : \\\"${JDBC_PASSWORD}\\\" \
+           \\\"AWS_BUCKET\\\" : \\\"${AWS_BUCKET}\\\", \
+           \\\"JDBC_USERNAME\\\" : \\\"${JDBC_USERNAME}\\\", \
+           \\\"JDBC_PASSWORD\\\" : \\\"${JDBC_PASSWORD}\\\", \
+           \\\"JDBC_URL\\\" : \\\"${JDBC_URL}\\\", \
+           \\\"JDBC_SCHEMA\\\" : \\\"${JDBC_SCHEMA}\\\", \
            \\\"JDBC_TABLENAME\\\" : \\\"${JDBC_TABLENAME}\\\" \
-           \\\"JDBC_URL\\\" : \\\"${JDBC_URL}\\\" \
-           \\\"JDBC_SCHEMA\\\" : \\\"${JDBC_SCHEMA}\\\" \
          }\", \
          \"edge\" : false}" \
     ${DPM_URL}jobrunner/rest/v1/jobs \

@@ -133,7 +133,10 @@ if [ -z "${DATABASE_URL}" ]; then
     exit 1
 fi
 
+# Command inside uri_parser return non-zero - don't exit the shell!
+set +e
 uri_parser "${DATABASE_URL}"
+set -e
 
 JDBC_USERNAME=$uri_user
 JDBC_PASSWORD=$uri_password

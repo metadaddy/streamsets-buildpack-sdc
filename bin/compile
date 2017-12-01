@@ -8,6 +8,8 @@ indent() {
   sed -u 's/^/       /'
 }
 
+echo "DATABASE_URL is ${DATABASE_URL}"
+
 BP_DIR=$(cd $(dirname $0)/..; pwd) # absolute path
 BUILD_DIR=$1
 CACHE_DIR=$2

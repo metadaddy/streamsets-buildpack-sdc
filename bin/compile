@@ -57,8 +57,9 @@ echo "-----> Downloading and extracting StreamSets Data Collector ${SDC_VERSION}
 curl -s --retry 3 -L ${SDC_ARCHIVE}/streamsets-datacollector-core-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
 echo "-----> Downloading and extracting StreamSets Data Collector AWS Stage Library ${SDC_VERSION}"
 curl -s --retry 3 -L ${SDC_ARCHIVE}/streamsets-datacollector-aws-lib-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
-echo "-----> Downloading and extracting StreamSets Data Collector JDBC Stage Library ${SDC_VERSION}"
-curl -s --retry 3 -L ${SDC_ARCHIVE}/streamsets-datacollector-jdbc-lib-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
+echo "-----> Downloading and extracting StreamSets Data Collector JDBC Stage Library CUSTOM-VERSION"
+#curl -s --retry 3 -L ${SDC_ARCHIVE}/streamsets-datacollector-jdbc-lib-${SDC_VERSION}.tgz | tar xz -C ${BUILD_DIR}
+curl -s --retry 3 -L https://s3-us-west-2.amazonaws.com/pat.archive/streamsets-datacollector-salesforce-lib-3.1.0.0-SNAPSHOT.tgz | tar xz -C ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION} --strip-components 1
 
 echo "-----> Downloading Postgres JDBC Driver"
 mkdir -p ${BUILD_DIR}/streamsets-datacollector-${SDC_VERSION}/streamsets-libs-extras/streamsets-datacollector-jdbc-lib/lib

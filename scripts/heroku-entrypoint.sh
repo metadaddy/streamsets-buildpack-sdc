@@ -58,6 +58,56 @@ wait_for_sdc_exit() {
     while nc -q 1 localhost ${port} </dev/null; do sleep 2; done    
 }
 
+// Adapted from http://wp.vpalos.com/537/uri-parsing-using-bash-built-in-features/
+uri_parser() {
+    # uri capture
+    uri="$@"
+
+    # safe escaping
+    uri="${uri//\`/%60}"
+    uri="${uri//\"/%22}"
+
+    # top level parsing
+    pattern='^(([a-z]*)://)?((([^:\/]+)(:([^@\/]*))?@)?([^:\/?]+)(:([0-9]+))?)(\/[^?]*)?(\?[^#]*)?(#.*)?$'
+    [[ "$uri" =~ $pattern ]] || return 1;
+
+    # component extraction
+    uri=${BASH_REMATCH[0]}
+    uri_schema=${BASH_REMATCH[2]}
+    uri_address=${BASH_REMATCH[3]}
+    uri_user=${BASH_REMATCH[5]}
+    uri_password=${BASH_REMATCH[7]}
+    uri_host=${BASH_REMATCH[8]}
+    uri_port=${BASH_REMATCH[10]}
+    uri_path=${BASH_REMATCH[11]}
+    uri_query=${BASH_REMATCH[12]}
+    uri_fragment=${BASH_REMATCH[13]}
+
+    # path parsing
+    count=0
+    path="$uri_path"
+    pattern='^/+([^/]+)'
+    while [[ $path =~ $pattern ]]; do
+        eval "uri_parts[$count]=\"${BASH_REMATCH[1]}\""
+        path="${path:${#BASH_REMATCH[0]}}"
+        let count++
+    done
+
+    # query parsing
+    count=0
+    query="$uri_query"
+    pattern='^[?&]+([^= ]+)(=([^&]*))?'
+    while [[ $query =~ $pattern ]]; do
+        eval "uri_args[$count]=\"${BASH_REMATCH[1]}\""
+        eval "uri_arg_${BASH_REMATCH[1]}=\"${BASH_REMATCH[3]}\""
+        query="${query:${#BASH_REMATCH[0]}}"
+        let count++
+    done
+
+    # return success
+    return 0
+}
+
 if [ -z "${SDC_VERSION}" ]; then
     echo "SDC_VERSION must be set. Exiting..."
     exit 1
@@ -77,6 +127,19 @@ if [ -z "${PIPELINE_COMMIT_ID}" ]; then
     echo "PIPELINE_COMMIT_ID must be set. Exiting..."
     exit 1
 fi
+
+if [ -z "${DATABASE_URL}" ]; then
+    echo "DATABASE_URL must be set. Exiting..."
+    exit 1
+fi
+
+uri_parser "${DATABASE_URL}"
+
+JDBC_USERNAME=$uri_user
+JDBC_PASSWORD=$uri_password
+JDBC_URL="jdbc:postgresql://${uri_host}:${uri_port}${uri_path}?sslmode=require"
+JDBC_TABLENAME=staging
+JDBC_SCHEMA=public
 
 DPM_URL=${DPM_URL:-https://cloud.streamsets.com/}
 
@@ -148,7 +211,17 @@ JOB_ID=$(curl -s -X PUT \
          \"statsRefreshInterval\": 10000, \
          \"numInstances\" : 1, \
          \"migrateOffsets\" : true, \
-         \"runtimeParameters\": \"{ \\\"AWS_KEY\\\" : \\\"${AWS_KEY}\\\", \\\"AWS_SECRET\\\" : \\\"${AWS_SECRET}\\\", \\\"AWS_BUCKET\\\" : \\\"${AWS_BUCKET}\\\" }\", \
+         \"runtimeParameters\": \
+           \"{ \
+           \\\"AWS_KEY\\\" : \\\"${AWS_KEY}\\\", \
+           \\\"AWS_SECRET\\\" : \\\"${AWS_SECRET}\\\", \
+           \\\"AWS_BUCKET\\\" : \\\"${AWS_BUCKET}\\\" \
+           \\\"JDBC_USERNAME\\\" : \\\"${JDBC_USERNAME}\\\" \
+           \\\"JDBC_PASSWORD\\\" : \\\"${JDBC_PASSWORD}\\\" \
+           \\\"JDBC_TABLENAME\\\" : \\\"${JDBC_TABLENAME}\\\" \
+           \\\"JDBC_URL\\\" : \\\"${JDBC_URL}\\\" \
+           \\\"JDBC_SCHEMA\\\" : \\\"${JDBC_SCHEMA}\\\" \
+         }\", \
          \"edge\" : false}" \
     ${DPM_URL}jobrunner/rest/v1/jobs \
     -H "Content-Type:application/json" -H "X-Requested-By:SDC" -H "X-SS-REST-CALL:true" \

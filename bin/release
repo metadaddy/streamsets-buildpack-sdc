@@ -3,7 +3,7 @@
 cat << EOF
 ---
 addons:
-  - heroku-postgresql
+  - heroku-postgresql:standard-0
 default_process_types:
   web: scripts/heroku-entrypoint.sh dc
 EOF

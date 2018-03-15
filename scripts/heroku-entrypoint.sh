@@ -143,7 +143,7 @@ if [ -z "${DATABASE_URL}" ]; then
     exit 1
 fi
 
-# Command inside uri_parser return non-zero - don't exit the shell!
+# Commands inside uri_parser return non-zero - don't exit the shell!
 set +e
 uri_parser "${DATABASE_URL}"
 set -e
@@ -167,6 +167,8 @@ fi
 
 SDC_DIST=${HOME}/streamsets-datacollector-${SDC_VERSION}
 SDC_CONF=${SDC_DIST}/etc
+
+# TBD - generate label in compile script?
 
 # Generate unique DPM_LABEL
 DPM_LABEL=$(cat /proc/sys/kernel/random/uuid)
@@ -204,11 +206,14 @@ set -e
 
 SALESFORCE_HOST=$uri_host
 
-# Is there already an Analytics connector?
+# Is there already an Analytics connector for this JDBC URL?
 CONNECTORS=$(curl -s -H "Authorization: OAuth $SESSION_ID" https://${SALESFORCE_HOST}/services/data/v41.0/wave/dataConnectors/)
 CONNECTOR=$(echo $CONNECTORS | jq  ".dataConnectors | map(select(any(.connectionProperties[]; .value == \"$JDBC_URL\")))")
 if [ "${CONNECTOR}" == "[]" ]; then
     # No connector - create it!
+
+    # TBD - unique name for the connector!
+
     CREATED=$(curl -s -X POST \
         -d "{ \
           \"label\": \"StreamSets\", \
